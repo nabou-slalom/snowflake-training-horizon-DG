@@ -38,18 +38,18 @@ DROP SNOWFLAKE.DATA_PRIVACY.CLASSIFICATION_PROFILE IF EXISTS
 -- CLEANUP: Drop database (cascades to all schemas, tables, views, functions, stages)
 -- ============================================================================
 USE ROLE HRZN_NABS_DATA_ENGINEER;
-DROP DATABASE IF EXISTS HRZN_NABS_DB;
+DROP DATABASE HRZN_NABS_DB;
 
 -- ============================================================================
 -- CLEANUP: Drop roles and warehouse
 -- ============================================================================
-USE ROLE SECURITYADMIN;
+USE ROLE LOCAL_ADMIN;
 DROP ROLE IF EXISTS HRZN_NABS_DATA_GOVERNOR;
 DROP ROLE IF EXISTS HRZN_NABS_DATA_USER;
 DROP ROLE IF EXISTS HRZN_NABS_IT_ADMIN;
 DROP ROLE IF EXISTS HRZN_NABS_DATA_ENGINEER;
 
-USE ROLE SYSADMIN;
+USE ROLE LOCAL_ADMIN;
 DROP WAREHOUSE IF EXISTS HRZN_NABS_WH;
 
 -- ============================================================================
