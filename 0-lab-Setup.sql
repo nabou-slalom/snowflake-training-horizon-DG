@@ -31,6 +31,9 @@ GRANT ROLE HRZN_NABS_DATA_GOVERNOR TO ROLE LOCAL_ADMIN;
 GRANT ROLE HRZN_NABS_DATA_USER TO ROLE LOCAL_ADMIN;
 GRANT ROLE HRZN_NABS_IT_ADMIN TO ROLE LOCAL_ADMIN;
 
+--Create warehouse and provide grants
+CREATE OR REPLACE WAREHOUSE HRZN_NABS_WH WITH WAREHOUSE_SIZE='X-SMALL';
+USE WAREHOUSE HRZN_NABS_WH;
 
 BEGIN
     LET usr VARCHAR := (SELECT CURRENT_USER());
@@ -42,10 +45,7 @@ END;
 
 
 
---Create warehouse and provide grants
-CREATE OR REPLACE WAREHOUSE HRZN_NABS_WH WITH WAREHOUSE_SIZE='X-SMALL';
-
-
+--Provide grants
 
 
 GRANT USAGE ON WAREHOUSE HRZN_NABS_WH TO ROLE HRZN_NABS_DATA_ENGINEER;
@@ -262,12 +262,12 @@ USE ROLE HRZN_NABS_DATA_GOVERNOR;
 GRANT CREATE FUNCTION ON SCHEMA HRZN_NABS_DB.CLASSIFIERS TO ROLE HRZN_NABS_DATA_GOVERNOR;
 /*Up to here is good ************************************************************************/
 
-/******Need to skip this **********/
+/******Need to skip this *********
 -- Allow roles to use Cortex functions
 GRANT USAGE ON FUTURE FUNCTIONS IN SCHEMA HRZN_NABS_DB.HRZN_NABS_SCH TO ROLE HRZN_NABS_DATA_GOVERNOR;
 GRANT USAGE ON FUTURE FUNCTIONS IN SCHEMA HRZN_NABS_DB.HRZN_NABS_SCH TO ROLE HRZN_NABS_DATA_USER;
 GRANT USAGE ON FUTURE FUNCTIONS IN SCHEMA HRZN_NABS_DB.HRZN_NABS_SCH TO ROLE HRZN_NABS_IT_ADMIN;
-/******Need to skip this **********/
+*****Need to skip this **********/
 
 -- ==========================================================================
 -- REQUIRES ACCOUNTADMIN: Ask your account admin to run these two commands
