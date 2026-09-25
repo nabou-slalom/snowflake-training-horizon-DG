@@ -146,6 +146,8 @@ BEGIN
     EXECUTE IMMEDIATE 'GRANT ROLE HRZN_NABS_DATA_ANALYST TO USER "' || :usr || '"';
 END;
 
+USEROLE HRZN_NABS_DATA_ANALYST;
+
 --Lets try and access the CUSTOMER TABLE.
 SELECT * FROM HRZN_NABS_DB.HRZN_NABS_SCH.CUSTOMER;
 
@@ -257,6 +259,7 @@ SHOW PARAMETERS LIKE 'DATA_METRIC_SCHEDULE' IN TABLE HRZN_NABS_DB.HRZN_NABS_SCH.
 
 
 /*  C U S T O M   D M F */
+USE ROLE LOCAL_ADMIN;
 
 -- to accompany the Duplicate Count DMF, let's also create a Custom Data Metric Function
 -- that uses Regular Expression (RegEx) to Count Invalid Email Addresses
