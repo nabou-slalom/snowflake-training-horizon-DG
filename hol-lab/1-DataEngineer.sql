@@ -61,7 +61,7 @@ USE SCHEMA HRZN_NABS_SCH;
 
 
 --Let's take a look at the Roles currently in our account
-SHOW ROLES;
+SHOW ROLES LIKE 'HRZN_NABS%';
 
 
 -- this next query, will turn the output of our last SHOW command and allow us to filter on the Snowflake System Roles that
@@ -71,7 +71,7 @@ SELECT
     "name",
     "comment"
 FROM TABLE(RESULT_SCAN(LAST_QUERY_ID()))
-WHERE "name" IN ('ORGADMIN','ACCOUNTADMIN','SYSADMIN','USERADMIN','SECURITYADMIN','PUBLIC');
+WHERE "name" IN ('ORGADMIN','ACCOUNTADMIN','SYSADMIN','LOCAL_ADMIN','SECURITYADMIN','PUBLIC');
 
 /**
   Snowflake System Defined Role Definitions:
@@ -81,7 +81,7 @@ WHERE "name" IN ('ORGADMIN','ACCOUNTADMIN','SYSADMIN','USERADMIN','SECURITYADMIN
         in your account.
    3 - SECURITYADMIN: Role that can manage any object grant globally, as well as create, monitor,
       and manage users and roles.
-   4 - USERADMIN: Role that is dedicated to user and role management only.
+   4 - LOCAL_ADMIN: Role that is dedicated to user and role management only.
    5 - SYSADMIN: Role that has privileges to create warehouses and databases in an account.
       If, as recommended, you create a role hierarchy that ultimately assigns all custom roles to the SYSADMIN role, this role also has
       the ability to grant privileges on warehouses, databases, and other objects to other roles.
@@ -100,7 +100,7 @@ WHERE "name" IN ('ORGADMIN','ACCOUNTADMIN','SYSADMIN','USERADMIN','SECURITYADMIN
                             ^          |     ^        ^                  |
                             |          |     |        |                  |
                     +-------+-------+  |     |  +-----+-------+  +-------+-----+
-                    |   USERADMIN   |  |     |  | CUSTOM ROLE |  | CUSTOM ROLE |
+                    |   LOCAL_ADMIN   |  |     |  | CUSTOM ROLE |  | CUSTOM ROLE |
                     +---------------+  |     |  +-------------+  +-------------+
                             ^          |     |      ^              ^      ^
                             |          |     |      |              |      |
@@ -123,15 +123,15 @@ Step - Role Creation, GRANTS and SQL Variables
  a Test Role to provide access to the customer table.
 ----------------------------------------------------------------------------------*/
 
--- let's use the Useradmin Role to create a Data Analyst Role
-USE ROLE USERADMIN;
+-- let's use the LOCAL_ADMIN Role to create a Data Analyst Role
+USE ROLE LOCAL_ADMIN;
 
 CREATE OR REPLACE ROLE HRZN_NABS_DATA_ANALYST
     COMMENT = 'Analyst Role';
 
 
 -- now we will switch to Securityadmin to handle our privilege GRANTS
-USE ROLE SECURITYADMIN;
+-- USE ROLE SECURITYADMIN;
 
 -- first we will grant ALL privileges on the Development Warehouse to our Data Analyst Role
 GRANT ALL ON WAREHOUSE HRZN_NABS_WH TO ROLE HRZN_NABS_DATA_ANALYST;
@@ -140,10 +140,11 @@ GRANT ALL ON WAREHOUSE HRZN_NABS_WH TO ROLE HRZN_NABS_DATA_ANALYST;
 GRANT OPERATE, USAGE ON WAREHOUSE HRZN_NABS_WH TO ROLE HRZN_NABS_DATA_ANALYST;
 
 -- before we proceed, let's SET a SQL Variable to equal our CURRENT_USER()
-SET MY_USER_ID  = CURRENT_USER();
-
 -- now we can GRANT our Role to the User we are currently logged in as
-GRANT ROLE HRZN_NABS_DATA_ANALYST TO USER identifier($MY_USER_ID);
+BEGIN
+    LET usr VARCHAR := (SELECT CURRENT_USER());
+    EXECUTE IMMEDIATE 'GRANT ROLE HRZN_NABS_DATA_ANALYST TO USER "' || :usr || '"';
+END;
 
 --Lets try and access the CUSTOMER TABLE.
 SELECT * FROM HRZN_NABS_DB.HRZN_NABS_SCH.CUSTOMER;
