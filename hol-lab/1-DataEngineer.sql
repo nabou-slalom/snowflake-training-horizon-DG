@@ -54,10 +54,10 @@ Step - System Defined Roles and Privileges
 Let's first take a look at the Snowflake System Defined Roles and their privileges.
 ----------------------------------------------------------------------------------*/
 
-USE ROLE HRZN_DATA_ENGINEER;
-USE WAREHOUSE HRZN_WH;
-USE DATABASE HRZN_DB;
-USE SCHEMA HRZN_SCH;
+USE ROLE HRZN_NABS_DATA_ENGINEER;
+USE WAREHOUSE HRZN_NABS_WH;
+USE DATABASE HRZN_NABS_DB;
+USE SCHEMA HRZN_NABS_SCH;
 
 
 --Let's take a look at the Roles currently in our account
@@ -126,7 +126,7 @@ Step - Role Creation, GRANTS and SQL Variables
 -- let's use the Useradmin Role to create a Data Analyst Role
 USE ROLE USERADMIN;
 
-CREATE OR REPLACE ROLE HRZN_DATA_ANALYST
+CREATE OR REPLACE ROLE HRZN_NABS_DATA_ANALYST
     COMMENT = 'Analyst Role';
 
 
@@ -134,25 +134,25 @@ CREATE OR REPLACE ROLE HRZN_DATA_ANALYST
 USE ROLE SECURITYADMIN;
 
 -- first we will grant ALL privileges on the Development Warehouse to our Data Analyst Role
-GRANT ALL ON WAREHOUSE HRZN_WH TO ROLE HRZN_DATA_ANALYST;
+GRANT ALL ON WAREHOUSE HRZN_NABS_WH TO ROLE HRZN_NABS_DATA_ANALYST;
 
 -- next we will grant only OPERATE and USAGE privileges to our Test Role
-GRANT OPERATE, USAGE ON WAREHOUSE HRZN_WH TO ROLE HRZN_DATA_ANALYST;
+GRANT OPERATE, USAGE ON WAREHOUSE HRZN_NABS_WH TO ROLE HRZN_NABS_DATA_ANALYST;
 
 -- before we proceed, let's SET a SQL Variable to equal our CURRENT_USER()
 SET MY_USER_ID  = CURRENT_USER();
 
 -- now we can GRANT our Role to the User we are currently logged in as
-GRANT ROLE HRZN_DATA_ANALYST TO USER identifier($MY_USER_ID);
+GRANT ROLE HRZN_NABS_DATA_ANALYST TO USER identifier($MY_USER_ID);
 
 --Lets try and access the CUSTOMER TABLE.
-SELECT * FROM HRZN_DB.HRZN_SCH.CUSTOMER;
+SELECT * FROM HRZN_NABS_DB.HRZN_NABS_SCH.CUSTOMER;
 
 --The previous query fails as the role hasn't been provided access to query the database, schema or the table CUSTOMER.
 
 -- now we will grant USAGE on our Database and all Schemas within it
-GRANT USAGE ON DATABASE HRZN_DB TO ROLE HRZN_DATA_ANALYST;
-GRANT USAGE ON ALL SCHEMAS IN DATABASE HRZN_DB TO ROLE HRZN_DATA_ANALYST;
+GRANT USAGE ON DATABASE HRZN_NABS_DB TO ROLE HRZN_NABS_DATA_ANALYST;
+GRANT USAGE ON ALL SCHEMAS IN DATABASE HRZN_NABS_DB TO ROLE HRZN_NABS_DATA_ANALYST;
 
 /**
  Snowflake Database and Schema Grants
@@ -165,8 +165,8 @@ GRANT USAGE ON ALL SCHEMAS IN DATABASE HRZN_DB TO ROLE HRZN_DATA_ANALYST;
 **/
 
 -- we are going to test Data Governance features as our Test Role, so let's ensure it can run SELECT statements against our Data Model
-GRANT SELECT ON ALL TABLES IN SCHEMA HRZN_DB.HRZN_SCH TO ROLE HRZN_DATA_ANALYST;
-GRANT SELECT ON ALL VIEWS IN SCHEMA HRZN_DB.HRZN_SCH TO ROLE HRZN_DATA_ANALYST;
+GRANT SELECT ON ALL TABLES IN SCHEMA HRZN_NABS_DB.HRZN_NABS_SCH TO ROLE HRZN_NABS_DATA_ANALYST;
+GRANT SELECT ON ALL VIEWS IN SCHEMA HRZN_NABS_DB.HRZN_NABS_SCH TO ROLE HRZN_NABS_DATA_ANALYST;
 
     /**
      Snowflake View and Table Privilege Grants
@@ -178,10 +178,10 @@ GRANT SELECT ON ALL VIEWS IN SCHEMA HRZN_DB.HRZN_SCH TO ROLE HRZN_DATA_ANALYST;
     **/
 
 
-USE ROLE HRZN_DATA_ANALYST;
+USE ROLE HRZN_NABS_DATA_ANALYST;
 
 --Lets query the table again
-SELECT * FROM HRZN_DB.HRZN_SCH.CUSTOMER;
+SELECT * FROM HRZN_NABS_DB.HRZN_NABS_SCH.CUSTOMER;
 
 
 
@@ -200,7 +200,7 @@ SELECT * FROM HRZN_DB.HRZN_SCH.CUSTOMER;
 /*************************************************/
 /*************************************************/
 
-USE ROLE HRZN_DATA_ENGINEER;
+USE ROLE HRZN_NABS_DATA_ENGINEER;
 
 
 /*----------------------------------------------------------------------------------
@@ -210,9 +210,9 @@ Step  - Load the Data into the table
   Based Dynamic Data Masking. This will allow us to mask PII data in columns from
   our Test Role but not from more privileged Roles.
 ----------------------------------------------------------------------------------*/
---Load the file CustomerDataRaw.csv into the HRZN_DB.HRZN_SCH.CUSTOMER table via the snowsight UI
---Load the file CustomerOrders.csv into the HRZN_DB.HRZN_SCH.CUSTOMER_ORDERS table via the snowsight UI
---Menu: Data -> Databases -> HRZN_DB -> HRZN_SCH -> Tables -> CUSTOMER
+--Load the file CustomerDataRaw.csv into the HRZN_NABS_DB.HRZN_NABS_SCH.CUSTOMER table via the snowsight UI
+--Load the file CustomerOrders.csv into the HRZN_NABS_DB.HRZN_NABS_SCH.CUSTOMER_ORDERS table via the snowsight UI
+--Menu: Data -> Databases -> HRZN_NABS_DB -> HRZN_NABS_SCH -> Tables -> CUSTOMER
 
 
 
@@ -231,27 +231,27 @@ Step  - Data Quality Monitoring
 /*  S Y S T E M   D M F */
 --System DMF
 -- Set the schedule on the table
-ALTER TABLE HRZN_DB.HRZN_SCH.CUSTOMER
+ALTER TABLE HRZN_NABS_DB.HRZN_NABS_SCH.CUSTOMER
 SET DATA_METRIC_SCHEDULE = 'TRIGGER_ON_CHANGES';
 
 --Accuracy
-ALTER TABLE HRZN_DB.HRZN_SCH.CUSTOMER ADD DATA METRIC FUNCTION SNOWFLAKE.CORE.NULL_COUNT on (EMAIL);
+ALTER TABLE HRZN_NABS_DB.HRZN_NABS_SCH.CUSTOMER ADD DATA METRIC FUNCTION SNOWFLAKE.CORE.NULL_COUNT on (EMAIL);
 
 --Uniqueness
-ALTER TABLE HRZN_DB.HRZN_SCH.CUSTOMER ADD DATA METRIC FUNCTION SNOWFLAKE.CORE.UNIQUE_COUNT on (EMAIL);
-ALTER TABLE HRZN_DB.HRZN_SCH.CUSTOMER ADD DATA METRIC FUNCTION SNOWFLAKE.CORE.DUPLICATE_COUNT on (EMAIL);
+ALTER TABLE HRZN_NABS_DB.HRZN_NABS_SCH.CUSTOMER ADD DATA METRIC FUNCTION SNOWFLAKE.CORE.UNIQUE_COUNT on (EMAIL);
+ALTER TABLE HRZN_NABS_DB.HRZN_NABS_SCH.CUSTOMER ADD DATA METRIC FUNCTION SNOWFLAKE.CORE.DUPLICATE_COUNT on (EMAIL);
 
 --Volume
-ALTER TABLE HRZN_DB.HRZN_SCH.CUSTOMER ADD DATA METRIC FUNCTION SNOWFLAKE.CORE.ROW_COUNT on ();
+ALTER TABLE HRZN_NABS_DB.HRZN_NABS_SCH.CUSTOMER ADD DATA METRIC FUNCTION SNOWFLAKE.CORE.ROW_COUNT on ();
 
 
 --Review Counts
-SELECT SNOWFLAKE.CORE.NULL_COUNT(SELECT EMAIL FROM HRZN_DB.HRZN_SCH.CUSTOMER);
-SELECT SNOWFLAKE.CORE.UNIQUE_COUNT(SELECT EMAIL FROM HRZN_DB.HRZN_SCH.CUSTOMER);
-SELECT SNOWFLAKE.CORE.DUPLICATE_COUNT (SELECT EMAIL FROM HRZN_DB.HRZN_SCH.CUSTOMER) AS duplicate_count;
+SELECT SNOWFLAKE.CORE.NULL_COUNT(SELECT EMAIL FROM HRZN_NABS_DB.HRZN_NABS_SCH.CUSTOMER);
+SELECT SNOWFLAKE.CORE.UNIQUE_COUNT(SELECT EMAIL FROM HRZN_NABS_DB.HRZN_NABS_SCH.CUSTOMER);
+SELECT SNOWFLAKE.CORE.DUPLICATE_COUNT (SELECT EMAIL FROM HRZN_NABS_DB.HRZN_NABS_SCH.CUSTOMER) AS duplicate_count;
 
 -- before moving on, let's validate that our schedule is in place
-SHOW PARAMETERS LIKE 'DATA_METRIC_SCHEDULE' IN TABLE HRZN_DB.HRZN_SCH.CUSTOMER;
+SHOW PARAMETERS LIKE 'DATA_METRIC_SCHEDULE' IN TABLE HRZN_NABS_DB.HRZN_NABS_SCH.CUSTOMER;
 
 
 
@@ -259,24 +259,24 @@ SHOW PARAMETERS LIKE 'DATA_METRIC_SCHEDULE' IN TABLE HRZN_DB.HRZN_SCH.CUSTOMER;
 
 -- to accompany the Duplicate Count DMF, let's also create a Custom Data Metric Function
 -- that uses Regular Expression (RegEx) to Count Invalid Email Addresses
-CREATE DATA METRIC FUNCTION HRZN_DB.HRZN_SCH.INVALID_EMAIL_COUNT(IN_TABLE TABLE(IN_COL STRING))
+CREATE DATA METRIC FUNCTION HRZN_NABS_DB.HRZN_NABS_SCH.INVALID_EMAIL_COUNT(IN_TABLE TABLE(IN_COL STRING))
 RETURNS NUMBER 
 AS
 'SELECT COUNT_IF(FALSE = (IN_COL regexp ''^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,4}$'')) FROM IN_TABLE';
 
 
 -- for demo purposes, let's grant this to everyone
-GRANT ALL ON FUNCTION HRZN_DB.HRZN_SCH.INVALID_EMAIL_COUNT(TABLE(STRING)) TO ROLE PUBLIC;
+GRANT ALL ON FUNCTION HRZN_NABS_DB.HRZN_NABS_SCH.INVALID_EMAIL_COUNT(TABLE(STRING)) TO ROLE PUBLIC;
 
 
 -- as we did above, let's see how many Invalid Email Addresses currently exist
-SELECT HRZN_DB.HRZN_SCH.INVALID_EMAIL_COUNT(SELECT EMAIL FROM HRZN_DB.HRZN_SCH.CUSTOMER) AS INVALID_EMAIL_COUNT;
+SELECT HRZN_NABS_DB.HRZN_NABS_SCH.INVALID_EMAIL_COUNT(SELECT EMAIL FROM HRZN_NABS_DB.HRZN_NABS_SCH.CUSTOMER) AS INVALID_EMAIL_COUNT;
 
 
 -- before we can apply our DMF's to the table, we must first set the Data Metric Schedule. for our
 -- testing we will Trigger this to run every 5 minutes 
 
-ALTER TABLE HRZN_DB.HRZN_SCH.CUSTOMER SET DATA_METRIC_SCHEDULE = '5 minute'; -- for demo purpose, use 5 minute
+ALTER TABLE HRZN_NABS_DB.HRZN_NABS_SCH.CUSTOMER SET DATA_METRIC_SCHEDULE = '5 minute'; -- for demo purpose, use 5 minute
 
 /**
 Data Metric Schedule specifies the schedule for running Data Metric Functions
@@ -284,18 +284,18 @@ for tables and can leverage MINUTE, USING CRON or TRIGGER_ON_CHANGES
 **/
 
 -- add our Invalid Email Count Data Metric Function (DMF)
-ALTER TABLE HRZN_DB.HRZN_SCH.CUSTOMER 
-    ADD DATA METRIC FUNCTION HRZN_DB.HRZN_SCH.INVALID_EMAIL_COUNT ON (EMAIL);
+ALTER TABLE HRZN_NABS_DB.HRZN_NABS_SCH.CUSTOMER 
+    ADD DATA METRIC FUNCTION HRZN_NABS_DB.HRZN_NABS_SCH.INVALID_EMAIL_COUNT ON (EMAIL);
 
 
 -- before moving on, let's ensure that the Schedule is in place
-SHOW PARAMETERS LIKE 'DATA_METRIC_SCHEDULE' IN TABLE HRZN_DB.HRZN_SCH.CUSTOMER;
+SHOW PARAMETERS LIKE 'DATA_METRIC_SCHEDULE' IN TABLE HRZN_NABS_DB.HRZN_NABS_SCH.CUSTOMER;
 
 
 --Review the schedule
 select metric_name, ref_entity_name, schedule, schedule_status 
 from table(information_schema.data_metric_function_references(
-    ref_entity_name => 'HRZN_DB.HRZN_SCH.CUSTOMER', 
+    ref_entity_name => 'HRZN_NABS_DB.HRZN_NABS_SCH.CUSTOMER', 
     ref_entity_domain => 'TABLE'));
 
 
@@ -309,7 +309,7 @@ SELECT
     metric_name,
     value
 FROM SNOWFLAKE.LOCAL.DATA_QUALITY_MONITORING_RESULTS
-WHERE table_database = 'HRZN_DB'
+WHERE table_database = 'HRZN_NABS_DB'
 ORDER BY change_commit_time DESC;
 
 
