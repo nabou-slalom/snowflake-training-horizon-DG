@@ -38,10 +38,10 @@ Step - Access History (Read and Writes)
  Note: Access History latency is up to 3 hours.  So, some of the queries below may not have results.
 ---------------------------------------------------------------------------------*/
 
- USE ROLE HRZN_IT_ADMIN;
- USE DATABASE HRZN_DB;
- USE SCHEMA HRZN_SCH;
- USE WAREHOUSE HRZN_WH;
+ USE ROLE HRZN_NABS_IT_ADMIN;
+ USE DATABASE HRZN_NABS_DB;
+ USE SCHEMA HRZN_NABS_SCH;
+ USE WAREHOUSE HRZN_NABS_WH;
 
 
 --> how many queries have accessed each of our Raw layer tables directly?
@@ -80,7 +80,7 @@ JOIN snowflake.account_usage.access_history AS ah
 ON qh.query_id = ah.query_id,
     LATERAL FLATTEN(input => ah.base_objects_accessed)
 WHERE query_type = 'SELECT' AND
-    value:objectName = 'HRZN_DB.HRZN_SCH.CUSTOMER' AND
+    value:objectName = 'HRZN_NABS_DB.HRZN_NABS_SCH.CUSTOMER' AND
     start_time > dateadd(day, -90, current_date());
 
 --> last few "write" queries
@@ -93,7 +93,7 @@ JOIN snowflake.account_usage.access_history AS ah
 ON qh.query_id = ah.query_id,
     LATERAL FLATTEN(input => ah.base_objects_accessed)
 WHERE query_type != 'SELECT' AND
-    value:objectName = 'HRZN_DB.HRZN_SCH.CUSTOMER' AND
+    value:objectName = 'HRZN_NABS_DB.HRZN_NABS_SCH.CUSTOMER' AND
     start_time > dateadd(day, -90, current_date());
 
 
@@ -121,7 +121,7 @@ SELECT
 FROM
   SNOWFLAKE.ACCOUNT_USAGE.QUERY_HISTORY q 
 WHERE
-  q.QUERY_TEXT ILIKE '%HRZN_DB.HRZN_SCH.CUSTOMER%'
+  q.QUERY_TEXT ILIKE '%HRZN_NABS_DB.HRZN_NABS_SCH.CUSTOMER%'
 ORDER BY
   q.START_TIME DESC;
 
@@ -175,7 +175,7 @@ FROM
       ) baseSources
 ) col_lin
    WHERE
-       (SOURCE_OBJECT_NAME = 'HRZN_DB.HRZN_SCH.CUSTOMER' OR TARGET_OBJECT_NAME='HRZN_DB.HRZN_SCH.CUSTOMER')
+       (SOURCE_OBJECT_NAME = 'HRZN_NABS_DB.HRZN_NABS_SCH.CUSTOMER' OR TARGET_OBJECT_NAME='HRZN_NABS_DB.HRZN_NABS_SCH.CUSTOMER')
     AND
         (SOURCE_COLUMN_NAME IN (
                 SELECT
@@ -185,8 +185,8 @@ FROM
                     SELECT
                         *
                     FROM TABLE(
-                      HRZN_DB.INFORMATION_SCHEMA.TAG_REFERENCES_ALL_COLUMNS(
-                        'HRZN_DB.HRZN_SCH.CUSTOMER',
+                      HRZN_NABS_DB.INFORMATION_SCHEMA.TAG_REFERENCES_ALL_COLUMNS(
+                        'HRZN_NABS_DB.HRZN_NABS_SCH.CUSTOMER',
                         'table'
                       )
                     )
@@ -202,8 +202,8 @@ FROM
                     SELECT
                         *
                     FROM TABLE(
-                      HRZN_DB.INFORMATION_SCHEMA.TAG_REFERENCES_ALL_COLUMNS(
-                        'HRZN_DB.HRZN_SCH.CUSTOMER',
+                      HRZN_NABS_DB.INFORMATION_SCHEMA.TAG_REFERENCES_ALL_COLUMNS(
+                        'HRZN_NABS_DB.HRZN_NABS_SCH.CUSTOMER',
                         'table'
                       )
                     )

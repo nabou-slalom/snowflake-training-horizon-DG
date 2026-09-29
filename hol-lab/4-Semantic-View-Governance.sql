@@ -40,10 +40,10 @@ Jan 26, 2026        Severin Gassauer    Initial AI Governance Extension - Semant
 -- If you get permission errors, verify that setup was run successfully
 
 -- Switch to the governance role
-USE ROLE HRZN_DATA_GOVERNOR;
-USE WAREHOUSE HRZN_WH;
-USE DATABASE HRZN_DB;
-USE SCHEMA HRZN_SCH;
+USE ROLE HRZN_NABS_DATA_GOVERNOR;
+USE WAREHOUSE HRZN_NABS_WH;
+USE DATABASE HRZN_NABS_DB;
+USE SCHEMA HRZN_NABS_SCH;
 
 -- ============================================================================
 -- 4.1: CREATE SEMANTIC VIEW FOR CORTEX ANALYST
@@ -55,17 +55,17 @@ USE SCHEMA HRZN_SCH;
 -- - Dimensions (attributes for grouping/filtering)
 -- - Metrics (aggregated measures)
 -- ============================================================================
-USE ROLE HRZN_DATA_GOVERNOR;
+USE ROLE HRZN_NABS_DATA_GOVERNOR;
 
 CREATE OR REPLACE SEMANTIC VIEW CUSTOMER_ORDER_ANALYTICS
 
   TABLES (
-    customers AS HRZN_DB.HRZN_SCH.CUSTOMER
+    customers AS HRZN_NABS_DB.HRZN_NABS_SCH.CUSTOMER
       PRIMARY KEY (ID)
       WITH SYNONYMS ('customer', 'clients', 'buyers')
       COMMENT = 'Customer master data with PII protection',
       
-    orders AS HRZN_DB.HRZN_SCH.CUSTOMER_ORDERS
+    orders AS HRZN_NABS_DB.HRZN_NABS_SCH.CUSTOMER_ORDERS
       PRIMARY KEY (ORDER_ID)
       WITH SYNONYMS ('sales orders', 'transactions', 'purchases')
       COMMENT = 'Customer order transactions'
@@ -217,7 +217,7 @@ SELECT * FROM SEMANTIC_VIEW(
 -- This is the KEY governance feature - existing masking and row access
 -- policies on the underlying tables automatically apply to semantic view queries!
 
--- As HRZN_DATA_GOVERNOR - see all data (no masking, all rows)
+-- As HRZN_NABS_DATA_GOVERNOR - see all data (no masking, all rows)
 SELECT * FROM SEMANTIC_VIEW(
     CUSTOMER_ORDER_ANALYTICS
     DIMENSIONS customers.customer_name, customers.email_address, customers.location_state
@@ -225,8 +225,8 @@ SELECT * FROM SEMANTIC_VIEW(
 )
 LIMIT 5;
 
--- Now test as HRZN_DATA_USER (restricted role)
-USE ROLE HRZN_DATA_USER;
+-- Now test as HRZN_NABS_DATA_USER (restricted role)
+USE ROLE HRZN_NABS_DATA_USER;
 
 -- Email should be MASKED
 -- Only MA state should be visible (row access policy)
@@ -243,7 +243,7 @@ LIMIT 5;
 -- 3. This happens automatically - no special AI policy needed!
 
 -- Switch back to governor role
-USE ROLE HRZN_DATA_GOVERNOR;
+USE ROLE HRZN_NABS_DATA_GOVERNOR;
 
 -- ============================================================================
 -- 4.5: USE WITH CORTEX ANALYST (SNOWFLAKE INTELLIGENCE)
@@ -254,7 +254,7 @@ To use this semantic view with Cortex Analyst in Snowsight:
 1. Open Snowsight (https://<your-account>.snowflakecomputing.com)
 2. Click "Projects" → "Cortex Analyst" in left navigation
    OR use the "Ask Snowflake" / "Snowflake Intelligence" feature
-3. Select semantic view: HRZN_DB.HRZN_SCH.CUSTOMER_ORDER_ANALYTICS
+3. Select semantic view: HRZN_NABS_DB.HRZN_NABS_SCH.CUSTOMER_ORDER_ANALYTICS
 4. Ask natural language questions:
    - "What are the total sales by state?"
    - "Who are my top 10 customers by revenue?"
@@ -264,7 +264,7 @@ To use this semantic view with Cortex Analyst in Snowsight:
    - "What is total revenue for California?"
 
 KEY GOVERNANCE BENEFIT:
-- If you're logged in as HRZN_DATA_USER, the AI will return MASKED emails
+- If you're logged in as HRZN_NABS_DATA_USER, the AI will return MASKED emails
 - Row access policies will filter the data automatically
 - No additional configuration needed - governance just works!
 
@@ -278,14 +278,14 @@ flow through to AI-generated queries without any additional configuration.
 
 STEP 1: TEST AS DATA GOVERNOR (Full Access)
 --------------------------------------------
-1. In Snowsight, switch role to HRZN_DATA_GOVERNOR:
+1. In Snowsight, switch role to HRZN_NABS_DATA_GOVERNOR:
    - Click your profile (top right)
    - Select "Switch Role"
-   - Choose HRZN_DATA_GOVERNOR
+   - Choose HRZN_NABS_DATA_GOVERNOR
 
 2. Open Cortex Analyst:
    - Go to "Projects" → "Cortex Analyst"
-   - Select semantic view: HRZN_DB.HRZN_SCH.CUSTOMER_ORDER_ANALYTICS
+   - Select semantic view: HRZN_NABS_DB.HRZN_NABS_SCH.CUSTOMER_ORDER_ANALYTICS
 
 3. Ask: "Show me total revenue by state"
    EXPECTED RESULT:
@@ -307,13 +307,13 @@ STEP 1: TEST AS DATA GOVERNOR (Full Access)
 
 STEP 2: TEST AS DATA USER (Restricted Access)
 ---------------------------------------------
-1. In Snowsight, switch role to HRZN_DATA_USER:
+1. In Snowsight, switch role to HRZN_NABS_DATA_USER:
    - Click your profile (top right)
    - Select "Switch Role"
-   - Choose HRZN_DATA_USER
+   - Choose HRZN_NABS_DATA_USER
 
 2. Stay in Cortex Analyst with same semantic view:
-   - HRZN_DB.HRZN_SCH.CUSTOMER_ORDER_ANALYTICS
+   - HRZN_NABS_DB.HRZN_NABS_SCH.CUSTOMER_ORDER_ANALYTICS
 
 3. Ask: "Show me total revenue by state"
    EXPECTED RESULT:
@@ -354,7 +354,7 @@ This is the KEY VALUE PROPOSITION:
 
 ADDITIONAL TEST CASES (Optional):
 ----------------------------------
-As HRZN_DATA_USER, also try:
+As HRZN_NABS_DATA_USER, also try:
 - "Show me phone numbers for customers" → Should see some masked based on OPTIN
 - "What is the average order value?" → Should work (aggregations allowed)
 - "Show me SSN or credit card numbers" → Should see MASKED values
@@ -369,11 +369,11 @@ If masking/filtering doesn't work:
    WHERE REF_ENTITY_NAME IN ('CUSTOMER', 'CUSTOMER_ORDERS');
 
 2. Verify role grants:
-   SHOW GRANTS TO ROLE HRZN_DATA_USER;
+   SHOW GRANTS TO ROLE HRZN_NABS_DATA_USER;
 
 3. Test direct table query first (without semantic view):
-   USE ROLE HRZN_DATA_USER;
-   SELECT EMAIL, STATE FROM HRZN_DB.HRZN_SCH.CUSTOMER LIMIT 10;
+   USE ROLE HRZN_NABS_DATA_USER;
+   SELECT EMAIL, STATE FROM HRZN_NABS_DB.HRZN_NABS_SCH.CUSTOMER LIMIT 10;
    -- Should see masked emails and only MA state
 
 4. If semantic view shows different results than direct table query,

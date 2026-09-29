@@ -36,21 +36,21 @@
 | * 5. Verify classification tags propagate from Lab 2
 | *******************************************************************************/
 
-USE ROLE HRZN_DATA_GOVERNOR;
-USE WAREHOUSE HRZN_WH;
-USE DATABASE HRZN_DB;
-USE SCHEMA HRZN_SCH;
+USE ROLE HRZN_NABS_DATA_GOVERNOR;
+USE WAREHOUSE HRZN_NABS_WH;
+USE DATABASE HRZN_NABS_DB;
+USE SCHEMA HRZN_NABS_SCH;
 
 -- ============================================================================
 -- 5.1: PREPARE CUSTOMER FEEDBACK DATA WITH PII
 -- ============================================================================
 
 -- Add a feedback column to customer orders
-ALTER TABLE HRZN_DB.HRZN_SCH.CUSTOMER_ORDERS 
+ALTER TABLE HRZN_NABS_DB.HRZN_NABS_SCH.CUSTOMER_ORDERS 
 ADD COLUMN IF NOT EXISTS CUSTOMER_FEEDBACK VARCHAR;
 
 -- Populate with sample feedback containing various PII types
-UPDATE HRZN_DB.HRZN_SCH.CUSTOMER_ORDERS
+UPDATE HRZN_NABS_DB.HRZN_NABS_SCH.CUSTOMER_ORDERS
 SET CUSTOMER_FEEDBACK = 
     CASE 
         WHEN MOD(ORDER_ID::INT, 10) = 0 THEN 
@@ -82,7 +82,7 @@ WHERE CUSTOMER_FEEDBACK IS NULL;
 SELECT 
     ORDER_ID,
     CUSTOMER_FEEDBACK
-FROM HRZN_DB.HRZN_SCH.CUSTOMER_ORDERS 
+FROM HRZN_NABS_DB.HRZN_NABS_SCH.CUSTOMER_ORDERS 
 WHERE CUSTOMER_FEEDBACK NOT LIKE 'Standard order%'
 LIMIT 10;
 
@@ -109,7 +109,7 @@ WITH sample_feedback AS (
     SELECT 
         ORDER_ID,
         CUSTOMER_FEEDBACK as original_feedback
-    FROM HRZN_DB.HRZN_SCH.CUSTOMER_ORDERS 
+    FROM HRZN_NABS_DB.HRZN_NABS_SCH.CUSTOMER_ORDERS 
     WHERE CUSTOMER_FEEDBACK NOT LIKE 'Standard order%'
     LIMIT 5
 )
@@ -143,7 +143,7 @@ FROM sample_feedback;
 USE ROLE SYSADMIN;
 -- Create redacted feedback table for ML training and analytics
 -- Limited to 100 rows for demo performance takes about 50 seconds
-CREATE OR REPLACE TABLE HRZN_DB.HRZN_SCH.CUSTOMER_FEEDBACK_REDACTED AS
+CREATE OR REPLACE TABLE HRZN_NABS_DB.HRZN_NABS_SCH.CUSTOMER_FEEDBACK_REDACTED AS
 SELECT 
     ORDER_ID,
     CUSTOMER_ID,
@@ -152,7 +152,7 @@ SELECT
     SNOWFLAKE.CORTEX.AI_REDACT(CUSTOMER_FEEDBACK) as redacted_feedback,
     CURRENT_TIMESTAMP() as redacted_at,
     CURRENT_USER() as redacted_by
-FROM HRZN_DB.HRZN_SCH.CUSTOMER_ORDERS 
+FROM HRZN_NABS_DB.HRZN_NABS_SCH.CUSTOMER_ORDERS 
 WHERE CUSTOMER_FEEDBACK IS NOT NULL
 LIMIT 100;
 
@@ -161,7 +161,7 @@ SELECT
     ORDER_ID,
     original_feedback,
     redacted_feedback
-FROM HRZN_DB.HRZN_SCH.CUSTOMER_FEEDBACK_REDACTED
+FROM HRZN_NABS_DB.HRZN_NABS_SCH.CUSTOMER_FEEDBACK_REDACTED
 WHERE original_feedback NOT LIKE 'Standard order%'
 LIMIT 10;
 
@@ -179,7 +179,7 @@ SELECT
         WHEN SNOWFLAKE.CORTEX.SENTIMENT(redacted_feedback) < -0.5 THEN 'Negative'
         ELSE 'Neutral'
     END as sentiment_category
-FROM HRZN_DB.HRZN_SCH.CUSTOMER_FEEDBACK_REDACTED
+FROM HRZN_NABS_DB.HRZN_NABS_SCH.CUSTOMER_FEEDBACK_REDACTED
 WHERE redacted_feedback NOT LIKE 'Standard order%'
 ORDER BY sentiment_score DESC
 LIMIT 100;
@@ -232,47 +232,47 @@ FROM feedback_sample;
 
 -- Governors see original feedback, analysts see redacted version
 -- Create a secure view using pre-redacted table
-USE ROLE HRZN_DATA_GOVERNOR;
-CREATE OR REPLACE SECURE VIEW HRZN_DB.HRZN_SCH.CUSTOMER_FEEDBACK_SECURE AS
+USE ROLE HRZN_NABS_DATA_GOVERNOR;
+CREATE OR REPLACE SECURE VIEW HRZN_NABS_DB.HRZN_NABS_SCH.CUSTOMER_FEEDBACK_SECURE AS
 SELECT 
     ORDER_ID,
     CUSTOMER_ID,
     ORDER_TS,
     CASE 
-        WHEN CURRENT_ROLE() IN ('HRZN_DATA_GOVERNOR', 'ACCOUNTADMIN') 
+        WHEN CURRENT_ROLE() IN ('HRZN_NABS_DATA_GOVERNOR', 'ACCOUNTADMIN') 
         THEN original_feedback
         ELSE redacted_feedback
     END as CUSTOMER_FEEDBACK,
     redacted_at,
     redacted_by
-FROM HRZN_DB.HRZN_SCH.CUSTOMER_FEEDBACK_REDACTED;
+FROM HRZN_NABS_DB.HRZN_NABS_SCH.CUSTOMER_FEEDBACK_REDACTED;
 
 -- Test as governor (sees original PII)
-USE ROLE HRZN_DATA_GOVERNOR;
+USE ROLE HRZN_NABS_DATA_GOVERNOR;
 SELECT 
     ORDER_ID,
     CUSTOMER_FEEDBACK
-FROM HRZN_DB.HRZN_SCH.CUSTOMER_FEEDBACK_SECURE 
+FROM HRZN_NABS_DB.HRZN_NABS_SCH.CUSTOMER_FEEDBACK_SECURE 
 WHERE CUSTOMER_FEEDBACK NOT LIKE 'Standard order%' 
 LIMIT 5;
 
 -- Test as data user (sees redacted version)
-USE ROLE HRZN_DATA_USER;
+USE ROLE HRZN_NABS_DATA_USER;
 SELECT 
     ORDER_ID,
     CUSTOMER_FEEDBACK
-FROM HRZN_DB.HRZN_SCH.CUSTOMER_FEEDBACK_SECURE 
+FROM HRZN_NABS_DB.HRZN_NABS_SCH.CUSTOMER_FEEDBACK_SECURE 
 WHERE CUSTOMER_FEEDBACK NOT LIKE 'Standard order%' 
 LIMIT 5;
 
-USE ROLE HRZN_DATA_GOVERNOR;
+USE ROLE HRZN_NABS_DATA_GOVERNOR;
 
 /*******************************************************************************
  * KEY OBSERVATION: Efficient Dynamic Redaction by Role
  * 
  * Same view, different results based on role:
- * - HRZN_DATA_GOVERNOR: Sees original PII (for governance/compliance)
- * - HRZN_DATA_USER: Sees pre-computed redacted version (for analytics/ML)
+ * - HRZN_NABS_DATA_GOVERNOR: Sees original PII (for governance/compliance)
+ * - HRZN_NABS_DATA_USER: Sees pre-computed redacted version (for analytics/ML)
  * 
  * Performance benefits:
  * - AI_REDACT runs once during table creation (not on every query)
@@ -300,7 +300,7 @@ WITH feedback_analysis AS (
             WHEN LOWER(redacted_feedback) LIKE '%urgent%' OR LOWER(redacted_feedback) LIKE '%privacy%' THEN 'Urgent Issue'
             ELSE 'General Feedback'
         END as feedback_category
-    FROM HRZN_DB.HRZN_SCH.CUSTOMER_FEEDBACK_REDACTED
+    FROM HRZN_NABS_DB.HRZN_NABS_SCH.CUSTOMER_FEEDBACK_REDACTED
     WHERE redacted_feedback NOT LIKE 'Standard order%'
 )
 SELECT 
