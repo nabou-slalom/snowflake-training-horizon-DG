@@ -140,7 +140,7 @@ FROM sample_feedback;
 -- ============================================================================
 -- 5.3: CREATE REDACTED TABLE FOR SAFE ANALYTICS
 -- ============================================================================
-USE ROLE SYSADMIN;
+USE ROLE LOCAL_ADMIN;
 -- Create redacted feedback table for ML training and analytics
 -- Limited to 100 rows for demo performance takes about 50 seconds
 CREATE OR REPLACE TABLE HRZN_NABS_DB.HRZN_NABS_SCH.CUSTOMER_FEEDBACK_REDACTED AS
